@@ -106,3 +106,27 @@ class QuestionIndexViewTests(TestCase):
         response = self.client.get(reverse("polls:index"))
         self.assertContains(response, "No polls are avaiable")
         self.assertQuerysetEqual(response.context["latest_question_list"], [])
+
+
+class QuestionDetailViewTests(TestCase):
+    
+    def test_future_questions(self):
+        """
+        If a future question is stored, his detail view cant be displayed and it will return
+        a 404 error not found.
+        """
+        future_question = create_question("¿Quien es el mejor CD de Platzi?", days=23)
+        future_question.save()
+        response = self.client.get(reverse("polls:detail", args=(future_question.id,)))
+        self.assertEqual(response.status_code, 404)
+    
+    def test_past_question(self):
+        """
+        If a past question is stored, his detail view will be displayed and it will return
+        a 200 (ok)
+        """
+        past_question = create_question("¿Quien es el mejor CD de Platzi?", days=-23)
+        past_question.save()
+        response = self.client.get(reverse("polls:detail", args=(past_question.id,)))
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, past_question.question_text)
